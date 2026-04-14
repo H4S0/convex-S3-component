@@ -19,15 +19,6 @@ A [Convex component](https://www.convex.dev/components) for integrating Amazon S
 - An AWS account with an S3 bucket
 - AWS IAM credentials with `s3:PutObject` and `s3:GetObject` permissions
 
----
-
-## Installation
-
-```bash
-npm install convex-s3
-```
-
----
 
 ## Setup
 
