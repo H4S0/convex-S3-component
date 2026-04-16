@@ -2,7 +2,6 @@
 
 [![npm version](https://img.shields.io/npm/v/%40hasoo%2Fconvex-s3)](https://www.npmjs.com/package/@hasoo/convex-s3)
 [![npm downloads](https://img.shields.io/npm/dm/%40hasoo%2Fconvex-s3)](https://www.npmjs.com/package/@hasoo/convex-s3)
-[![license](https://img.shields.io/npm/l/%40hasoo%2Fconvex-s3)](https://www.npmjs.com/package/@hasoo/convex-s3)
 
 [npm package](https://www.npmjs.com/package/@hasoo/convex-s3)
 
