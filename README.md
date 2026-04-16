@@ -1,6 +1,20 @@
 ﻿# @hasoo/convex-s3
 
+[![npm version](https://img.shields.io/npm/v/%40hasoo%2Fconvex-s3)](https://www.npmjs.com/package/@hasoo/convex-s3)
+[![npm downloads](https://img.shields.io/npm/dm/%40hasoo%2Fconvex-s3)](https://www.npmjs.com/package/@hasoo/convex-s3)
+[![license](https://img.shields.io/npm/l/%40hasoo%2Fconvex-s3)](https://www.npmjs.com/package/@hasoo/convex-s3)
+
+[npm package](https://www.npmjs.com/package/@hasoo/convex-s3)
+
 A [Convex component](https://www.convex.dev/components) for integrating Amazon S3 file storage into your Convex backend. It generates presigned upload and download URLs so your clients can talk to S3 directly without proxying files through your server.
+
+---
+
+## Install
+
+```bash
+npm install @hasoo/convex-s3
+```
 
 ---
 
