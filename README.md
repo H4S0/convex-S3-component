@@ -1,16 +1,16 @@
-# convex-s3
+# @haso/convex-s3
 
-A [Convex component](https://www.convex.dev/components) for integrating Amazon S3 file storage into your Convex backend. Supports generating presigned upload and download URLs, so your clients can interact with S3 directly without routing files through your server.
+A [Convex component](https://www.convex.dev/components) for integrating Amazon S3 file storage into your Convex backend. It generates presigned upload and download URLs so your clients can talk to S3 directly without proxying files through your server.
 
 ---
 
 ## Features
 
-- Generate **presigned upload URLs** so clients can upload files directly to S3
-- Generate **presigned download URLs** for secure, time-limited access to stored files
-- Attach **cache headers** like `Cache-Control` at upload time
-- Return a stable **object URL** alongside the presigned upload URL
-- Works natively as a Convex component — no extra server required
+- Generate presigned upload URLs for direct-to-S3 uploads
+- Generate presigned download URLs for time-limited access
+- Set upload cache headers like `Cache-Control`
+- Return a stable object URL alongside the signed upload URL
+- Works natively as a Convex component
 - Built with the official AWS SDK v3
 
 ---
@@ -21,7 +21,6 @@ A [Convex component](https://www.convex.dev/components) for integrating Amazon S
 - An AWS account with an S3 bucket
 - AWS IAM credentials with `s3:PutObject` and `s3:GetObject` permissions
 
-
 ## Setup
 
 ### 1. Register the component
@@ -30,7 +29,7 @@ In your `convex/convex.config.ts`:
 
 ```ts
 import { defineApp } from "convex/server";
-import s3 from "convex-s3/convex.config";
+import s3 from "@haso/convex-s3/convex.config.js";
 
 const app = defineApp();
 app.use(s3);
@@ -38,18 +37,24 @@ app.use(s3);
 export default app;
 ```
 
+If you need the packaged component API type in your app:
+
+```ts
+import type { ComponentApi } from "@haso/convex-s3/_generated/component.js";
+```
+
 ### 2. Set environment variables
 
-Add the following environment variables to your Convex dashboard (or `.env.local` for local development):
+Add the following environment variables to your Convex dashboard or `.env.local`:
 
 | Variable | Description |
 |---|---|
 | `S3_ACCESS_KEY_ID` | Your AWS access key ID |
 | `S3_SECRET_ACCESS_KEY` | Your AWS secret access key |
-| `S3_REGION` | The AWS region your bucket is in (e.g. `us-east-1`) |
+| `S3_REGION` | The AWS region your bucket is in, for example `us-east-1` |
 | `S3_BUCKET` | The name of your S3 bucket |
-| `S3_PUBLIC_BASE_URL` | Optional base URL for stable object URLs, such as a CloudFront domain |
-| `S3_DEFAULT_CACHE_CONTROL` | Optional default `Cache-Control` header applied to uploads |
+| `S3_PUBLIC_BASE_URL` | Optional stable base URL, such as a CloudFront domain |
+| `S3_DEFAULT_CACHE_CONTROL` | Optional default `Cache-Control` header for uploads |
 
 ---
 
@@ -57,7 +62,7 @@ Add the following environment variables to your Convex dashboard (or `.env.local
 
 ### Generate a presigned upload URL
 
-Use this to let a client upload a file directly to S3:
+Use this to let a client upload a file directly to S3 while setting cache headers on the object:
 
 ```ts
 import { useAction } from "convex/react";
@@ -89,7 +94,7 @@ function UploadButton({ file }: { file: File }) {
 
 ### Generate a presigned download URL
 
-Use this to let a client access a stored file:
+Use this when you need secure, expiring access to a stored file:
 
 ```ts
 const url = await storage.getSignedUrl("uploads/example.png", {
@@ -100,10 +105,10 @@ const url = await storage.getSignedUrl("uploads/example.png", {
 
 ### Use stable object URLs for caching
 
-If you want browser or CDN caching to behave well, prefer stable object URLs and versioned object keys:
+For browser or CDN caching, prefer stable object URLs and versioned object keys:
 
 ```ts
-import { S3Storage } from "convex-s3";
+import { S3Storage } from "@haso/convex-s3";
 
 const storage = new S3Storage(component, {
   bucket: process.env.S3_BUCKET,
@@ -119,7 +124,7 @@ const { key, publicUrl } = await storage.generateUploadUrl({
 });
 ```
 
-`publicUrl` stays stable for a given object key, which makes it a much better cache key than a presigned download URL that rotates over time.
+`publicUrl` stays the same for a given object key, which makes it a much better cache key than a presigned download URL that rotates over time.
 
 ---
 
@@ -161,15 +166,21 @@ To allow browsers to upload directly to your S3 bucket, configure CORS on the bu
 
 ## Project Structure
 
-```
+```text
 convex-S3-component/
-├── convex/
-│   └── convex.config.ts    # Component registration
-├── src/
-│   └── client.ts           # Client-side exports
-├── package.json
-└── tsconfig.json
++-- convex/
+�   +-- convex.config.ts
+�   +-- lib.ts
+�   +-- schema.ts
+�   +-- _generated/
++-- src/
+�   +-- client.ts
++-- client.ts
++-- package.json
++-- tsconfig.build.json
 ```
+
+The published package builds both the library client entry and the Convex component entrypoints into `dist/`, including `dist/convex/convex.config.js` and `dist/convex/_generated/component.js`.
 
 ---
 
@@ -183,9 +194,24 @@ convex-S3-component/
 
 ---
 
-## Contributing
+## Publish Checklist
 
-Pull requests and issues are welcome. Please open an issue first to discuss any significant changes.
+Before publishing, the usual flow is:
+
+```bash
+pnpm install
+pnpm run typecheck
+pnpm run build
+pnpm pack
+```
+
+If you want to test the tarball in another project first:
+
+```bash
+pnpm run pack:local
+```
+
+That gives you a local package archive you can install into a separate Convex app to verify the packaged component entry points before publishing to npm.
 
 ---
 

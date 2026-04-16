@@ -1,2 +1,6 @@
 node_modules/
 _tmp_*
+dist/
+.npm-cache/
+.pack/
+*.tgz
