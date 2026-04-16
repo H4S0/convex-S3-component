@@ -8,6 +8,8 @@ A [Convex component](https://www.convex.dev/components) for integrating Amazon S
 
 - Generate **presigned upload URLs** so clients can upload files directly to S3
 - Generate **presigned download URLs** for secure, time-limited access to stored files
+- Attach **cache headers** like `Cache-Control` at upload time
+- Return a stable **object URL** alongside the presigned upload URL
 - Works natively as a Convex component — no extra server required
 - Built with the official AWS SDK v3
 
@@ -42,10 +44,12 @@ Add the following environment variables to your Convex dashboard (or `.env.local
 
 | Variable | Description |
 |---|---|
-| `AWS_ACCESS_KEY_ID` | Your AWS access key ID |
-| `AWS_SECRET_ACCESS_KEY` | Your AWS secret access key |
-| `AWS_REGION` | The AWS region your bucket is in (e.g. `us-east-1`) |
-| `AWS_S3_BUCKET` | The name of your S3 bucket |
+| `S3_ACCESS_KEY_ID` | Your AWS access key ID |
+| `S3_SECRET_ACCESS_KEY` | Your AWS secret access key |
+| `S3_REGION` | The AWS region your bucket is in (e.g. `us-east-1`) |
+| `S3_BUCKET` | The name of your S3 bucket |
+| `S3_PUBLIC_BASE_URL` | Optional base URL for stable object URLs, such as a CloudFront domain |
+| `S3_DEFAULT_CACHE_CONTROL` | Optional default `Cache-Control` header applied to uploads |
 
 ---
 
@@ -59,11 +63,16 @@ Use this to let a client upload a file directly to S3:
 import { useAction } from "convex/react";
 import { api } from "../convex/_generated/api";
 
-function UploadButton() {
+function UploadButton({ file }: { file: File }) {
   const getUploadUrl = useAction(api.s3.generateUploadUrl);
 
-  async function handleUpload(file: File) {
-    const { url, key } = await getUploadUrl({ filename: file.name });
+  async function handleUpload() {
+    const key = `uploads/${crypto.randomUUID()}-${file.name}`;
+    const { url, publicUrl } = await getUploadUrl({
+      key,
+      contentType: file.type,
+      cacheControl: "public, max-age=31536000, immutable",
+    });
 
     await fetch(url, {
       method: "PUT",
@@ -71,10 +80,10 @@ function UploadButton() {
       headers: { "Content-Type": file.type },
     });
 
-    console.log("Uploaded to S3 key:", key);
+    console.log("Stable object URL:", publicUrl);
   }
 
-  return <button onClick={() => handleUpload(myFile)}>Upload</button>;
+  return <button onClick={handleUpload}>Upload</button>;
 }
 ```
 
@@ -83,20 +92,34 @@ function UploadButton() {
 Use this to let a client access a stored file:
 
 ```ts
-import { useAction } from "convex/react";
-import { api } from "../convex/_generated/api";
-
-function DownloadLink({ s3Key }: { s3Key: string }) {
-  const getDownloadUrl = useAction(api.s3.generateDownloadUrl);
-
-  async function handleDownload() {
-    const { url } = await getDownloadUrl({ key: s3Key });
-    window.open(url, "_blank");
-  }
-
-  return <button onClick={handleDownload}>Download</button>;
-}
+const url = await storage.getSignedUrl("uploads/example.png", {
+  expiresIn: 3600,
+  responseContentDisposition: 'inline; filename="example.png"',
+});
 ```
+
+### Use stable object URLs for caching
+
+If you want browser or CDN caching to behave well, prefer stable object URLs and versioned object keys:
+
+```ts
+import { S3Storage } from "convex-s3";
+
+const storage = new S3Storage(component, {
+  bucket: process.env.S3_BUCKET,
+  region: process.env.S3_REGION,
+  accessKeyId: process.env.S3_ACCESS_KEY_ID,
+  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+  publicBaseUrl: "https://cdn.example.com",
+  defaultCacheControl: "public, max-age=31536000, immutable",
+});
+
+const { key, publicUrl } = await storage.generateUploadUrl({
+  key: `assets/${buildHash}/logo.png`,
+});
+```
+
+`publicUrl` stays stable for a given object key, which makes it a much better cache key than a presigned download URL that rotates over time.
 
 ---
 

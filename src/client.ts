@@ -17,6 +17,23 @@ export interface S3Config {
   region?: string
   accessKeyId?: string
   secretAccessKey?: string
+  publicBaseUrl?: string
+  defaultCacheControl?: string
+}
+
+export interface UploadUrlOptions {
+  key?: string
+  contentType?: string
+  cacheControl?: string
+  contentDisposition?: string
+  expiresIn?: number
+}
+
+export interface DownloadUrlOptions {
+  expiresIn?: number
+  responseCacheControl?: string
+  responseContentDisposition?: string
+  responseContentType?: string
 }
 
 type RunQueryCtx = {
@@ -32,7 +49,12 @@ type RunActionCtx = {
   runMutation: GenericMutationCtx<GenericDataModel>['runMutation']
 }
 
-function validateS3Config(config: Required<S3Config>): void {
+type ResolvedS3Config = Required<
+  Omit<S3Config, 'publicBaseUrl' | 'defaultCacheControl'>
+> &
+  Pick<S3Config, 'publicBaseUrl' | 'defaultCacheControl'>
+
+function validateS3Config(config: ResolvedS3Config): void {
   const missing: string[] = []
 
   if (!config.bucket) missing.push('S3_BUCKET')
@@ -50,7 +72,7 @@ function validateS3Config(config: Required<S3Config>): void {
 }
 
 export class S3Storage {
-  private config: Required<S3Config>
+  private config: ResolvedS3Config
   private component: ComponentApi
 
   constructor(component: ComponentApi, config?: S3Config) {
@@ -61,6 +83,9 @@ export class S3Storage {
       accessKeyId: config?.accessKeyId ?? process.env.S3_ACCESS_KEY_ID ?? '',
       secretAccessKey:
         config?.secretAccessKey ?? process.env.S3_SECRET_ACCESS_KEY ?? '',
+      publicBaseUrl: config?.publicBaseUrl ?? process.env.S3_PUBLIC_BASE_URL,
+      defaultCacheControl:
+        config?.defaultCacheControl ?? process.env.S3_DEFAULT_CACHE_CONTROL,
     }
     validateS3Config(this.config)
   }
@@ -76,21 +101,77 @@ export class S3Storage {
     })
   }
 
-  async generateUploadUrl(key?: string): Promise<{ key: string; url: string }> {
-    const objectKey = key ?? crypto.randomUUID()
-    const url = await getSignedUrl(
-      this.getClient(),
-      new PutObjectCommand({ Bucket: this.config.bucket, Key: objectKey }),
-      { expiresIn: 300 },
-    )
-    return { key: objectKey, url }
+  private normalizeUploadOptions(
+    keyOrOptions?: string | UploadUrlOptions,
+  ): UploadUrlOptions {
+    if (typeof keyOrOptions === 'string') {
+      return { key: keyOrOptions }
+    }
+    return keyOrOptions ?? {}
   }
 
-  async getSignedUrl(key: string, expiresIn = 3600): Promise<string> {
+  private encodeObjectKey(key: string): string {
+    return key
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')
+  }
+
+  getPublicUrl(key: string): string {
+    const encodedKey = this.encodeObjectKey(key)
+    const baseUrl =
+      this.config.publicBaseUrl?.replace(/\/+$/, '') ??
+      (this.config.region === 'us-east-1'
+        ? `https://${this.config.bucket}.s3.amazonaws.com`
+        : `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com`)
+    return `${baseUrl}/${encodedKey}`
+  }
+
+  async generateUploadUrl(
+    key?: string,
+  ): Promise<{ key: string; url: string; publicUrl: string }>
+  async generateUploadUrl(
+    options?: UploadUrlOptions,
+  ): Promise<{ key: string; url: string; publicUrl: string }>
+  async generateUploadUrl(
+    keyOrOptions?: string | UploadUrlOptions,
+  ): Promise<{ key: string; url: string; publicUrl: string }> {
+    const options = this.normalizeUploadOptions(keyOrOptions)
+    const objectKey = options.key ?? crypto.randomUUID()
+    const url = await getSignedUrl(
+      this.getClient(),
+      new PutObjectCommand({
+        Bucket: this.config.bucket,
+        Key: objectKey,
+        CacheControl: options.cacheControl ?? this.config.defaultCacheControl,
+        ContentDisposition: options.contentDisposition,
+        ContentType: options.contentType,
+      }),
+      { expiresIn: options.expiresIn ?? 300 },
+    )
+    return { key: objectKey, url, publicUrl: this.getPublicUrl(objectKey) }
+  }
+
+  async getSignedUrl(key: string, expiresIn?: number): Promise<string>
+  async getSignedUrl(key: string, options?: DownloadUrlOptions): Promise<string>
+  async getSignedUrl(
+    key: string,
+    expiresInOrOptions: number | DownloadUrlOptions = 3600,
+  ): Promise<string> {
+    const options =
+      typeof expiresInOrOptions === 'number'
+        ? { expiresIn: expiresInOrOptions }
+        : expiresInOrOptions
     return getSignedUrl(
       this.getClient(),
-      new GetObjectCommand({ Bucket: this.config.bucket, Key: key }),
-      { expiresIn },
+      new GetObjectCommand({
+        Bucket: this.config.bucket,
+        Key: key,
+        ResponseCacheControl: options.responseCacheControl,
+        ResponseContentDisposition: options.responseContentDisposition,
+        ResponseContentType: options.responseContentType,
+      }),
+      { expiresIn: options.expiresIn ?? 3600 },
     )
   }
 

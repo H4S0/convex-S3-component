@@ -44,7 +44,6 @@ export const upsertMetadata = mutation({
       await ctx.db.patch(existing._id, {
         contentType: args.contentType,
         size: args.size,
-        lastModified: args.lastModified,
       })
       return { isNew: false }
     }

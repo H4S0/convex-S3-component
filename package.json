@@ -3,10 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.28.2",
   "main": "./src/client.ts",
   "exports": {
     ".": "./src/client.ts",
     "./convex.config": "./convex/convex.config.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",
