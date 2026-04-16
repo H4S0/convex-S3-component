@@ -4,7 +4,7 @@
 
 [npm package](https://www.npmjs.com/package/@hasoo/convex-s3)
 
-A [Convex component](https://www.convex.dev/components) for integrating Amazon S3 file storage into your Convex backend. It generates presigned upload and download URLs so your clients can talk to S3 directly without proxying files through your server.
+A [Convex component](https://www.convex.dev/components/hasoo/convex-s3) for integrating Amazon S3 file storage into your Convex backend. It generates presigned upload and download URLs so your clients can talk to S3 directly without proxying files through your server.
 
 ---
 
