@@ -65,9 +65,9 @@ Add the following environment variables to your Convex dashboard or `.env.local`
 | `S3_SECRET_ACCESS_KEY` | Your AWS secret access key |
 | `S3_REGION` | The AWS region your bucket is in, for example `us-east-1` |
 | `S3_BUCKET` | The name of your S3 bucket |
-| `S3_PUBLIC_BASE_URL` | Optional stable base URL, such as a CloudFront domain |
+| `S3_PUBLIC_BASE_URL` | Optional stable base URL, such as a CloudFront domain. Required when `S3_ENDPOINT` is set |
 | `S3_DEFAULT_CACHE_CONTROL` | Optional default `Cache-Control` header for uploads |
-| `S3_ENDPOINT` | Optional custom endpoint URL, for S3-compatible providers (e.g. Cloudflare R2, MinIO) |
+| `S3_ENDPOINT` | Optional custom endpoint URL, for S3-compatible providers (e.g. Cloudflare R2, MinIO). Requires `S3_PUBLIC_BASE_URL` to also be set, since the public access URL format is provider-specific and can't be derived from the API endpoint |
 
 ---
 

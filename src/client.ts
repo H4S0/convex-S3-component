@@ -70,6 +70,15 @@ function validateS3Config(config: ResolvedS3Config): void {
         `Set them in your Convex dashboard: https://dashboard.convex.dev`,
     )
   }
+
+  // Public URL format is provider-specific and can't be derived from the API endpoint.
+  if (config.endpoint && !config.publicBaseUrl) {
+    throw new Error(
+      `S3_PUBLIC_BASE_URL (or the publicBaseUrl option) must be set when using a custom S3_ENDPOINT.\n` +
+        `The public access URL for S3-compatible providers (e.g. Cloudflare R2, MinIO) is not ` +
+        `guaranteed to match the API endpoint.`,
+    )
+  }
 }
 
 export class S3Storage {
@@ -124,11 +133,9 @@ export class S3Storage {
     const encodedKey = this.encodeObjectKey(key)
     const baseUrl =
       this.config.publicBaseUrl?.replace(/\/+$/, '') ??
-      (this.config.endpoint
-        ? `${this.config.endpoint.replace(/\/+$/, '')}/${this.config.bucket}`
-        : this.config.region === 'us-east-1'
-          ? `https://${this.config.bucket}.s3.amazonaws.com`
-          : `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com`)
+      (this.config.region === 'us-east-1'
+        ? `https://${this.config.bucket}.s3.amazonaws.com`
+        : `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com`)
     return `${baseUrl}/${encodedKey}`
   }
 
