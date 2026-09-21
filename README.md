@@ -67,6 +67,7 @@ Add the following environment variables to your Convex dashboard or `.env.local`
 | `S3_BUCKET` | The name of your S3 bucket |
 | `S3_PUBLIC_BASE_URL` | Optional stable base URL, such as a CloudFront domain |
 | `S3_DEFAULT_CACHE_CONTROL` | Optional default `Cache-Control` header for uploads |
+| `S3_ENDPOINT` | Optional custom endpoint URL, for S3-compatible providers (e.g. Cloudflare R2, MinIO) |
 
 ---
 

@@ -19,6 +19,7 @@ export interface S3Config {
   secretAccessKey?: string
   publicBaseUrl?: string
   defaultCacheControl?: string
+  endpoint?: string
 }
 
 export interface UploadUrlOptions {
@@ -50,9 +51,9 @@ type RunActionCtx = {
 }
 
 type ResolvedS3Config = Required<
-  Omit<S3Config, 'publicBaseUrl' | 'defaultCacheControl'>
+  Omit<S3Config, 'publicBaseUrl' | 'defaultCacheControl' | 'endpoint'>
 > &
-  Pick<S3Config, 'publicBaseUrl' | 'defaultCacheControl'>
+  Pick<S3Config, 'publicBaseUrl' | 'defaultCacheControl' | 'endpoint'>
 
 function validateS3Config(config: ResolvedS3Config): void {
   const missing: string[] = []
@@ -86,6 +87,7 @@ export class S3Storage {
       publicBaseUrl: config?.publicBaseUrl ?? process.env.S3_PUBLIC_BASE_URL,
       defaultCacheControl:
         config?.defaultCacheControl ?? process.env.S3_DEFAULT_CACHE_CONTROL,
+      endpoint: config?.endpoint ?? process.env.S3_ENDPOINT,
     }
     validateS3Config(this.config)
   }
@@ -93,6 +95,7 @@ export class S3Storage {
   private getClient() {
     return new S3Client({
       region: this.config.region,
+      endpoint: this.config.endpoint,
       forcePathStyle: true,
       credentials: {
         accessKeyId: this.config.accessKeyId,
@@ -121,9 +124,11 @@ export class S3Storage {
     const encodedKey = this.encodeObjectKey(key)
     const baseUrl =
       this.config.publicBaseUrl?.replace(/\/+$/, '') ??
-      (this.config.region === 'us-east-1'
-        ? `https://${this.config.bucket}.s3.amazonaws.com`
-        : `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com`)
+      (this.config.endpoint
+        ? `${this.config.endpoint.replace(/\/+$/, '')}/${this.config.bucket}`
+        : this.config.region === 'us-east-1'
+          ? `https://${this.config.bucket}.s3.amazonaws.com`
+          : `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com`)
     return `${baseUrl}/${encodedKey}`
   }
 
