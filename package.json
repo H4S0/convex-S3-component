@@ -1,6 +1,26 @@
 {
   "name": "@hasoo/convex-s3",
   "version": "0.2.0",
+  "description": "Convex component for S3-compatible object storage: presigned upload/download URLs and file metadata.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/H4S0/convex-S3-component.git"
+  },
+  "homepage": "https://github.com/H4S0/convex-S3-component#readme",
+  "bugs": {
+    "url": "https://github.com/H4S0/convex-S3-component/issues"
+  },
+  "keywords": [
+    "convex",
+    "convex-component",
+    "s3",
+    "aws-s3",
+    "r2",
+    "minio",
+    "storage",
+    "file-upload"
+  ],
   "type": "module",
   "private": false,
   "packageManager": "pnpm@10.28.2",
