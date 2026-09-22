@@ -1,6 +1,6 @@
 {
   "name": "@hasoo/convex-s3",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Convex component for S3-compatible object storage: presigned upload/download URLs and file metadata.",
   "license": "MIT",
   "repository": {
