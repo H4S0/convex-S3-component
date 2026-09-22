@@ -19,6 +19,7 @@ export interface S3Config {
   secretAccessKey?: string
   publicBaseUrl?: string
   defaultCacheControl?: string
+  endpoint?: string
 }
 
 export interface UploadUrlOptions {
@@ -50,9 +51,9 @@ type RunActionCtx = {
 }
 
 type ResolvedS3Config = Required<
-  Omit<S3Config, 'publicBaseUrl' | 'defaultCacheControl'>
+  Omit<S3Config, 'publicBaseUrl' | 'defaultCacheControl' | 'endpoint'>
 > &
-  Pick<S3Config, 'publicBaseUrl' | 'defaultCacheControl'>
+  Pick<S3Config, 'publicBaseUrl' | 'defaultCacheControl' | 'endpoint'>
 
 function validateS3Config(config: ResolvedS3Config): void {
   const missing: string[] = []
@@ -67,6 +68,15 @@ function validateS3Config(config: ResolvedS3Config): void {
       `Missing required S3 environment variables:\n` +
         `  ${missing.join(', ')}\n` +
         `Set them in your Convex dashboard: https://dashboard.convex.dev`,
+    )
+  }
+
+  // Public URL format is provider-specific and can't be derived from the API endpoint.
+  if (config.endpoint && !config.publicBaseUrl) {
+    throw new Error(
+      `S3_PUBLIC_BASE_URL (or the publicBaseUrl option) must be set when using a custom S3_ENDPOINT.\n` +
+        `The public access URL for S3-compatible providers (e.g. Cloudflare R2, MinIO) is not ` +
+        `guaranteed to match the API endpoint.`,
     )
   }
 }
@@ -86,6 +96,7 @@ export class S3Storage {
       publicBaseUrl: config?.publicBaseUrl ?? process.env.S3_PUBLIC_BASE_URL,
       defaultCacheControl:
         config?.defaultCacheControl ?? process.env.S3_DEFAULT_CACHE_CONTROL,
+      endpoint: config?.endpoint ?? process.env.S3_ENDPOINT,
     }
     validateS3Config(this.config)
   }
@@ -93,6 +104,7 @@ export class S3Storage {
   private getClient() {
     return new S3Client({
       region: this.config.region,
+      endpoint: this.config.endpoint,
       forcePathStyle: true,
       credentials: {
         accessKeyId: this.config.accessKeyId,
