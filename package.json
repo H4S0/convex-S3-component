@@ -1,6 +1,6 @@
 {
   "name": "@hasoo/convex-s3",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "private": false,
   "packageManager": "pnpm@10.28.2",
