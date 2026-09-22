@@ -128,6 +128,7 @@ const storage = new S3Storage(component, {
   region: process.env.S3_REGION,
   accessKeyId: process.env.S3_ACCESS_KEY_ID,
   secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+  endpoint: process.env.S3_ENDPOINT,
   publicBaseUrl: "https://cdn.example.com",
   defaultCacheControl: "public, max-age=31536000, immutable",
 });
